@@ -1,0 +1,270 @@
+import { useEffect, useRef, useState } from 'react';
+import roomImage from '../assets/room.png';
+import { Character } from './Character';
+import { Hotspot } from './Hotspot';
+import { InteractionMenu, type ModalContent } from './InteractionMenu';
+import { Modal } from './Modal';
+import { MusicPlayer } from './MusicPlayer';
+import { NavigationDebugOverlay } from './NavigationDebugOverlay';
+import { DEBUG_NAVIGATION } from '../data/navigation';
+import { hotspots, initialCharacterPosition, type Hotspot as HotspotType } from '../data/hotspots';
+import { musicTracks } from '../data/portfolioContent';
+import {
+  cellToPercent,
+  findPath,
+  percentToCell,
+  type GridCell,
+} from '../utils/pathfinding';
+
+const STEP_DURATION_MS = 130;
+
+export function GameScene() {
+  const movementTimers = useRef<number[]>([]);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [characterPosition, setCharacterPosition] = useState(initialCharacterPosition);
+  const [visibleMenu, setVisibleMenu] = useState<HotspotType | null>(null);
+  const [isWalking, setIsWalking] = useState(false);
+  const [isSleeping, setIsSleeping] = useState(false);
+  const [modalContent, setModalContent] = useState<ModalContent | null>(null);
+  const [debugHotspots, setDebugHotspots] = useState(false);
+  const [currentPath, setCurrentPath] = useState<GridCell[]>([]);
+  const [musicTrackIndex, setMusicTrackIndex] = useState(0);
+  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+  const [musicVolume, setMusicVolume] = useState(0.45);
+  const [musicMessage, setMusicMessage] = useState('Choisis une chanson.');
+
+  useEffect(() => {
+    return () => clearMovementTimers();
+  }, []);
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = musicVolume;
+    }
+  }, [musicVolume]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+
+    if (!audio) {
+      return;
+    }
+
+    audio.pause();
+    audio.currentTime = 0;
+    setIsMusicPlaying(false);
+    setMusicMessage('Pret a lancer la musique.');
+  }, [musicTrackIndex]);
+
+  const handleHotspotSelect = (hotspot: HotspotType) => {
+    setModalContent(null);
+    setVisibleMenu(null);
+    moveCharacterTo(hotspot.characterTarget, hotspot);
+  };
+
+  const handleStageClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const destination = {
+      x: ((event.clientX - rect.left) / rect.width) * 100,
+      y: ((event.clientY - rect.top) / rect.height) * 100,
+    };
+
+    setModalContent(null);
+    setVisibleMenu(null);
+    moveCharacterTo(destination);
+  };
+
+  const moveCharacterTo = (destination: typeof characterPosition, hotspotToOpen?: HotspotType) => {
+    clearMovementTimers();
+
+    const path = findPath(percentToCell(characterPosition), percentToCell(destination));
+
+    if (path.length === 0) {
+      setCurrentPath([]);
+      setIsWalking(false);
+      return;
+    }
+
+    setCurrentPath(path);
+
+    const pathPoints = path.slice(1).map(cellToPercent);
+
+    if (pathPoints.length === 0) {
+      setIsWalking(false);
+      if (hotspotToOpen) {
+        setVisibleMenu(hotspotToOpen);
+      }
+      return;
+    }
+
+    setIsWalking(true);
+
+    pathPoints.forEach((point, index) => {
+      const timer = window.setTimeout(() => {
+        setCharacterPosition(point);
+      }, index * STEP_DURATION_MS);
+
+      movementTimers.current.push(timer);
+    });
+
+    const endTimer = window.setTimeout(() => {
+      setIsWalking(false);
+      if (hotspotToOpen) {
+        setVisibleMenu(hotspotToOpen);
+      }
+    }, pathPoints.length * STEP_DURATION_MS);
+
+    movementTimers.current.push(endTimer);
+  };
+
+  const handleSleep = () => {
+    setIsSleeping(true);
+    window.setTimeout(() => setIsSleeping(false), 2000);
+  };
+
+  const toggleMusicPlayback = async () => {
+    const audio = audioRef.current;
+
+    if (!audio) {
+      return;
+    }
+
+    if (isMusicPlaying) {
+      audio.pause();
+      setIsMusicPlaying(false);
+      setMusicMessage('Musique en pause.');
+      return;
+    }
+
+    try {
+      await audio.play();
+      setIsMusicPlaying(true);
+      setMusicMessage('Lecture en cours.');
+    } catch {
+      setIsMusicPlaying(false);
+      setMusicMessage("Ajoute le fichier mp3 dans src/assets/music pour l'ecouter.");
+    }
+  };
+
+  const clearMovementTimers = () => {
+    movementTimers.current.forEach((timer) => window.clearTimeout(timer));
+    movementTimers.current = [];
+  };
+
+  const showNavigationDebug = DEBUG_NAVIGATION || debugHotspots;
+  const currentTrack = musicTracks[musicTrackIndex];
+
+  return (
+    <main className="app-shell">
+      <audio
+        ref={audioRef}
+        src={currentTrack.src}
+        onEnded={() => {
+          setIsMusicPlaying(false);
+          setMusicMessage('Chanson terminee.');
+        }}
+        onError={() => {
+          setIsMusicPlaying(false);
+          setMusicMessage("Fichier audio introuvable pour l'instant.");
+        }}
+      />
+
+      <header className="top-bar">
+        <div>
+          <h1>Portfolio de Merieme</h1>
+          <p>Clique sur les objets pour interagir</p>
+        </div>
+        <label className="debug-toggle">
+          <input
+            type="checkbox"
+            checked={debugHotspots}
+            onChange={(event) => setDebugHotspots(event.target.checked)}
+          />
+          Debug
+        </label>
+      </header>
+
+      <section className="room-frame" aria-label="Chambre interactive en pixel art">
+        <div className="room-stage" onClick={handleStageClick}>
+          <img className="room-image" src={roomImage} alt="Chambre en pixel art" />
+
+          {showNavigationDebug && <NavigationDebugOverlay path={currentPath} />}
+
+          {hotspots.map((hotspot) => (
+            <Hotspot
+              key={hotspot.id}
+              hotspot={hotspot}
+              debug={debugHotspots}
+              onSelect={handleHotspotSelect}
+            />
+          ))}
+
+          <Character position={characterPosition} isWalking={isWalking} />
+
+          {visibleMenu && (
+            <InteractionMenu
+              hotspot={visibleMenu}
+              onClose={() => setVisibleMenu(null)}
+              onSleep={handleSleep}
+              onOpenModal={setModalContent}
+              musicPlayer={
+                <MusicPlayer
+                  trackIndex={musicTrackIndex}
+                  isPlaying={isMusicPlaying}
+                  volume={musicVolume}
+                  message={musicMessage}
+                  onSelectTrack={setMusicTrackIndex}
+                  onTogglePlayback={toggleMusicPlayback}
+                  onVolumeChange={setMusicVolume}
+                />
+              }
+            />
+          )}
+
+          {isSleeping && (
+            <div className="sleep-overlay" role="status" aria-live="polite">
+              <span>Zzz...</span>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {modalContent && (
+        <Modal title={modalContent.title} onClose={() => setModalContent(null)}>
+          {'body' in modalContent && <p>{modalContent.body}</p>}
+          {'list' in modalContent && (
+            <ul className="tag-list">
+              {modalContent.list.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          )}
+          {'skillGroups' in modalContent && (
+            <div className="skill-groups">
+              {modalContent.skillGroups.map((group) => (
+                <section className="skill-group" key={group.title}>
+                  <h3>{group.title}</h3>
+                  <p>{group.items.join(', ')}</p>
+                </section>
+              ))}
+            </div>
+          )}
+          {'projects' in modalContent && (
+            <div className="project-list">
+              {modalContent.projects.map((project) => (
+                <article className="project-card" key={project.title}>
+                  <h3>{project.title}</h3>
+                  <p>{project.description}</p>
+                  <p className="project-card__stack">{project.stack.join(' / ')}</p>
+                  <a href={project.link} target="_blank" rel="noopener noreferrer">
+                    Voir le projet
+                  </a>
+                </article>
+              ))}
+            </div>
+          )}
+        </Modal>
+      )}
+    </main>
+  );
+}
