@@ -5,9 +5,10 @@ type ModalProps = {
   title: string;
   children: ReactNode;
   onClose: () => void;
+  closeLabel: string;
 };
 
-export function Modal({ title, children, onClose }: ModalProps) {
+export function Modal({ title, children, onClose, closeLabel }: ModalProps) {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -30,7 +31,7 @@ export function Modal({ title, children, onClose }: ModalProps) {
       >
         <div className="panel-header">
           <h2 id="modal-title">{title}</h2>
-          <button className="icon-button" type="button" onClick={onClose} aria-label="Fermer">
+          <button className="icon-button" type="button" onClick={onClose} aria-label={closeLabel}>
             x
           </button>
         </div>

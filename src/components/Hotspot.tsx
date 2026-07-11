@@ -2,11 +2,13 @@ import type { Hotspot as HotspotType } from '../data/hotspots';
 
 type HotspotProps = {
   hotspot: HotspotType;
+  label: string;
+  interactWithLabel: string;
   debug: boolean;
   onSelect: (hotspot: HotspotType) => void;
 };
 
-export function Hotspot({ hotspot, debug, onSelect }: HotspotProps) {
+export function Hotspot({ hotspot, label, interactWithLabel, debug, onSelect }: HotspotProps) {
   const { area } = hotspot;
 
   return (
@@ -23,9 +25,9 @@ export function Hotspot({ hotspot, debug, onSelect }: HotspotProps) {
         event.stopPropagation();
         onSelect(hotspot);
       }}
-      aria-label={`Interagir avec ${hotspot.label}`}
+      aria-label={`${interactWithLabel} ${label}`}
     >
-      <span className="hotspot__tooltip">{hotspot.label}</span>
+      <span className="hotspot__tooltip">{label}</span>
     </button>
   );
 }

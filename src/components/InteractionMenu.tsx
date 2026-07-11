@@ -1,13 +1,14 @@
 import type { ReactNode } from 'react';
 import { externalLinks } from '../data/links';
-import { aboutContent } from '../data/portfolioContent';
+import { portfolioContent, type Project, type SkillGroup } from '../data/portfolioContent';
 import type { Hotspot } from '../data/hotspots';
+import type { Language, Translation } from '../data/translations';
 
 type ModalContent =
   | { title: string; body: string }
   | { title: string; list: string[] }
-  | { title: string; skillGroups: typeof aboutContent.competences }
-  | { title: string; projects: typeof aboutContent.projets };
+  | { title: string; skillGroups: SkillGroup[] }
+  | { title: string; projects: Project[] };
 
 type InteractionMenuProps = {
   hotspot: Hotspot;
@@ -15,6 +16,8 @@ type InteractionMenuProps = {
   onSleep: () => void;
   onOpenModal: (content: ModalContent) => void;
   musicPlayer: ReactNode;
+  language: Language;
+  translations: Translation;
 };
 
 function ExternalLink({ href, children }: { href: string; children: ReactNode }) {
@@ -31,7 +34,11 @@ export function InteractionMenu({
   onSleep,
   onOpenModal,
   musicPlayer,
+  language,
+  translations,
 }: InteractionMenuProps) {
+  const content = portfolioContent[language];
+  const hotspotLabel = translations.hotspots[hotspot.id as keyof Translation['hotspots']];
   const style = {
     left: `${hotspot.menuPosition.x}%`,
     top: `${hotspot.menuPosition.y}%`,
@@ -41,30 +48,30 @@ export function InteractionMenu({
     <section
       className="pixel-panel interaction-menu"
       style={style}
-      aria-label={hotspot.label}
+      aria-label={hotspotLabel}
       onClick={(event) => event.stopPropagation()}
     >
       <div className="panel-header">
-        <h2>{hotspot.label}</h2>
-        <button className="icon-button" type="button" onClick={onClose} aria-label="Fermer">
+        <h2>{hotspotLabel}</h2>
+        <button className="icon-button" type="button" onClick={onClose} aria-label={translations.close}>
           x
         </button>
       </div>
 
       {hotspot.interaction === 'computer' && (
         <div className="menu-actions">
-          <ExternalLink href={externalLinks.cv}>Consulter le CV</ExternalLink>
-          <ExternalLink href={externalLinks.linkedin}>Consulter LinkedIn</ExternalLink>
-          <ExternalLink href={externalLinks.github}>Consulter GitHub</ExternalLink>
-          <ExternalLink href={externalLinks.pinterest}>Consulter Pinterest</ExternalLink>
+          <ExternalLink href={externalLinks.cv}>{translations.viewCv}</ExternalLink>
+          <ExternalLink href={externalLinks.linkedin}>{translations.viewLinkedIn}</ExternalLink>
+          <ExternalLink href={externalLinks.github}>{translations.viewGitHub}</ExternalLink>
+          <ExternalLink href={externalLinks.pinterest}>{translations.viewPinterest}</ExternalLink>
         </div>
       )}
 
       {hotspot.interaction === 'bed' && (
         <div className="menu-actions">
-          <p className="menu-copy">Un peu de repos avant de repartir explorer.</p>
+          <p className="menu-copy">{translations.restCopy}</p>
           <button className="pixel-button" type="button" onClick={onSleep}>
-            Dormir
+            {translations.sleep}
           </button>
         </div>
       )}
@@ -76,34 +83,34 @@ export function InteractionMenu({
           <button
             className="pixel-button"
             type="button"
-            onClick={() => onOpenModal({ title: 'Mon parcours', body: aboutContent.parcours })}
+            onClick={() => onOpenModal({ title: translations.journey, body: content.parcours })}
           >
-            Mon parcours
+            {translations.journey}
           </button>
           <button
             className="pixel-button"
             type="button"
             onClick={() =>
-              onOpenModal({ title: 'Mes competences', skillGroups: aboutContent.competences })
+              onOpenModal({ title: translations.skills, skillGroups: content.competences })
             }
           >
-            Mes competences
+            {translations.skills}
           </button>
           <button
             className="pixel-button"
             type="button"
-            onClick={() => onOpenModal({ title: 'Mes projets', projects: aboutContent.projets })}
+            onClick={() => onOpenModal({ title: translations.projects, projects: content.projets })}
           >
-            Mes projets
+            {translations.projects}
           </button>
           <button
             className="pixel-button"
             type="button"
             onClick={() =>
-              onOpenModal({ title: 'Ce que je recherche', body: aboutContent.recherche })
+              onOpenModal({ title: translations.lookingFor, body: content.recherche })
             }
           >
-            Ce que je recherche
+            {translations.lookingFor}
           </button>
         </div>
       )}

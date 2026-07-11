@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import roomImage from '../assets/room.png';
+import roomNightImage from '../assets/room-night.png';
 import { Character } from './Character';
 import { Hotspot } from './Hotspot';
 import { InteractionMenu, type ModalContent } from './InteractionMenu';
@@ -9,6 +10,11 @@ import { NavigationDebugOverlay } from './NavigationDebugOverlay';
 import { DEBUG_NAVIGATION } from '../data/navigation';
 import { hotspots, initialCharacterPosition, type Hotspot as HotspotType } from '../data/hotspots';
 import { musicTracks } from '../data/portfolioContent';
+import {
+  translations,
+  type Language,
+  type MusicMessageKey,
+} from '../data/translations';
 import {
   cellToPercent,
   findPath,
@@ -27,15 +33,32 @@ export function GameScene() {
   const [isSleeping, setIsSleeping] = useState(false);
   const [modalContent, setModalContent] = useState<ModalContent | null>(null);
   const [debugHotspots, setDebugHotspots] = useState(false);
+  const [isNightMode, setIsNightMode] = useState(false);
+  const [language, setLanguage] = useState<Language>('en');
   const [currentPath, setCurrentPath] = useState<GridCell[]>([]);
   const [musicTrackIndex, setMusicTrackIndex] = useState(0);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const [musicVolume, setMusicVolume] = useState(0.45);
-  const [musicMessage, setMusicMessage] = useState('Choisis une chanson.');
+  const [musicMessage, setMusicMessage] = useState<MusicMessageKey>('choose');
+
+  const t = translations[language];
 
   useEffect(() => {
     return () => clearMovementTimers();
   }, []);
+
+  useEffect(() => {
+    document.documentElement.lang = language;
+    document.title = t.title;
+    document
+      .querySelector('meta[name="description"]')
+      ?.setAttribute(
+        'content',
+        language === 'fr'
+          ? 'Portfolio interactif point-and-click en pixel art de Merieme Laib.'
+          : 'Merieme Laib’s interactive point-and-click pixel art portfolio.',
+      );
+  }, [language, t.title]);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -53,7 +76,7 @@ export function GameScene() {
     audio.pause();
     audio.currentTime = 0;
     setIsMusicPlaying(false);
-    setMusicMessage('Pret a lancer la musique.');
+    setMusicMessage('ready');
   }, [musicTrackIndex]);
 
   const handleHotspotSelect = (hotspot: HotspotType) => {
@@ -132,17 +155,17 @@ export function GameScene() {
     if (isMusicPlaying) {
       audio.pause();
       setIsMusicPlaying(false);
-      setMusicMessage('Musique en pause.');
+      setMusicMessage('paused');
       return;
     }
 
     try {
       await audio.play();
       setIsMusicPlaying(true);
-      setMusicMessage('Lecture en cours.');
+      setMusicMessage('playing');
     } catch {
       setIsMusicPlaying(false);
-      setMusicMessage("Ajoute le fichier mp3 dans src/assets/music pour l'ecouter.");
+      setMusicMessage('missing');
     }
   };
 
@@ -161,32 +184,59 @@ export function GameScene() {
         src={currentTrack.src}
         onEnded={() => {
           setIsMusicPlaying(false);
-          setMusicMessage('Chanson terminee.');
+          setMusicMessage('ended');
         }}
         onError={() => {
           setIsMusicPlaying(false);
-          setMusicMessage("Fichier audio introuvable pour l'instant.");
+          setMusicMessage('error');
         }}
       />
 
       <header className="top-bar">
         <div>
-          <h1>Portfolio de Merieme</h1>
-          <p>Clique sur les objets pour interagir</p>
+          <h1>{t.title}</h1>
+          <p>{t.subtitle}</p>
         </div>
-        <label className="debug-toggle">
-          <input
-            type="checkbox"
-            checked={debugHotspots}
-            onChange={(event) => setDebugHotspots(event.target.checked)}
-          />
-          Debug
-        </label>
+        <div className="display-toggles">
+          <label className="language-control">
+            <span>{t.language}</span>
+            <select
+              value={language}
+              onChange={(event) => {
+                setLanguage(event.target.value as Language);
+                setModalContent(null);
+              }}
+            >
+              <option value="fr">Français</option>
+              <option value="en">English</option>
+            </select>
+          </label>
+          <label className="display-toggle">
+            <input
+              type="checkbox"
+              checked={debugHotspots}
+              onChange={(event) => setDebugHotspots(event.target.checked)}
+            />
+            {t.debug}
+          </label>
+          <label className="display-toggle">
+            <input
+              type="checkbox"
+              checked={isNightMode}
+              onChange={(event) => setIsNightMode(event.target.checked)}
+            />
+            {t.nightMode}
+          </label>
+        </div>
       </header>
 
-      <section className="room-frame" aria-label="Chambre interactive en pixel art">
+      <section className="room-frame" aria-label={isNightMode ? t.roomNightAlt : t.roomAlt}>
         <div className="room-stage" onClick={handleStageClick}>
-          <img className="room-image" src={roomImage} alt="Chambre en pixel art" />
+          <img
+            className="room-image"
+            src={isNightMode ? roomNightImage : roomImage}
+            alt={isNightMode ? t.roomNightAlt : t.roomAlt}
+          />
 
           {showNavigationDebug && <NavigationDebugOverlay path={currentPath} />}
 
@@ -194,16 +244,25 @@ export function GameScene() {
             <Hotspot
               key={hotspot.id}
               hotspot={hotspot}
+              label={t.hotspots[hotspot.id as keyof typeof t.hotspots]}
+              interactWithLabel={t.interactWith}
               debug={debugHotspots}
               onSelect={handleHotspotSelect}
             />
           ))}
 
-          <Character position={characterPosition} isWalking={isWalking} />
+          <Character
+            position={characterPosition}
+            isWalking={isWalking}
+            isNightMode={isNightMode}
+            ariaLabel={t.characterLabel}
+          />
 
           {visibleMenu && (
             <InteractionMenu
               hotspot={visibleMenu}
+              language={language}
+              translations={t}
               onClose={() => setVisibleMenu(null)}
               onSleep={handleSleep}
               onOpenModal={setModalContent}
@@ -212,7 +271,9 @@ export function GameScene() {
                   trackIndex={musicTrackIndex}
                   isPlaying={isMusicPlaying}
                   volume={musicVolume}
-                  message={musicMessage}
+                  message={t.musicMessages[musicMessage]}
+                  translations={t}
+                  language={language}
                   onSelectTrack={setMusicTrackIndex}
                   onTogglePlayback={toggleMusicPlayback}
                   onVolumeChange={setMusicVolume}
@@ -230,7 +291,11 @@ export function GameScene() {
       </section>
 
       {modalContent && (
-        <Modal title={modalContent.title} onClose={() => setModalContent(null)}>
+        <Modal
+          title={modalContent.title}
+          closeLabel={t.close}
+          onClose={() => setModalContent(null)}
+        >
           {'body' in modalContent && <p>{modalContent.body}</p>}
           {'list' in modalContent && (
             <ul className="tag-list">
@@ -257,7 +322,7 @@ export function GameScene() {
                   <p>{project.description}</p>
                   <p className="project-card__stack">{project.stack.join(' / ')}</p>
                   <a href={project.link} target="_blank" rel="noopener noreferrer">
-                    Voir le projet
+                    {t.viewProject}
                   </a>
                 </article>
               ))}

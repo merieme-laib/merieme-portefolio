@@ -10,7 +10,7 @@ export type SkillGroup = {
   items: string[];
 };
 
-export const aboutContent = {
+const frenchContent = {
   parcours: `Étudiante en informatique, je me spécialise progressivement en data science et en intelligence artificielle.
 
 Mon parcours m’a permis de travailler sur des projets variés : développement web, analyse de données, machine learning, visualisation, jeux vidéo et systèmes interactifs.
@@ -71,20 +71,88 @@ Aujourd’hui, je cherche à continuer dans cette voie à travers des projets ut
     "Stage en data science / IA a partir de fevrier 2027, idealement a l'international.",
 };
 
+const englishContent = {
+  parcours: `I am a computer science student gradually specializing in data science and artificial intelligence.
+
+My studies have allowed me to work on a wide range of projects, including web development, data analysis, machine learning, visualization, video games and interactive systems.
+
+I also completed a third-year internship at LIRIS focused on data and information extraction, which confirmed my interest in projects combining AI, data and real-world applications.
+
+Today, I want to continue along this path through useful, creative and well-crafted projects.`,
+  competences: [
+    {
+      title: 'Data & AI',
+      items: ['Python', 'pandas', 'scikit-learn', 'machine learning', 'data visualization', 'NLP', 'LLMs'],
+    },
+    {
+      title: 'Web development',
+      items: ['React', 'TypeScript', 'JavaScript', 'HTML', 'CSS', 'Node.js'],
+    },
+    {
+      title: 'Databases',
+      items: ['SQL', 'PostgreSQL', 'data modeling'],
+    },
+    {
+      title: 'Programming',
+      items: ['Java', 'C++', 'C', 'OCaml', 'Prolog'],
+    },
+    {
+      title: 'Tools',
+      items: ['Git', 'GitHub', 'VS Code', 'Jupyter Notebook', 'Linux/macOS'],
+    },
+    {
+      title: 'Creative work & projects',
+      items: ['Pixel art', 'interactive interfaces', '2D games', 'web portfolio'],
+    },
+  ] satisfies SkillGroup[],
+  projets: [
+    {
+      title: 'French Learning Knowledge Graph',
+      description:
+        'A knowledge graph modeling the challenges faced by Russian-speaking learners of French as a foreign language, including error analysis, grammar rules and learning paths.',
+      stack: ['Python', 'Neo4j', 'Cypher', 'Knowledge Graph'],
+      link: 'https://github.com/merieme-laib/french-learning-knowledge-graph',
+    },
+    {
+      title: 'E-Commerce Sales Analysis',
+      description:
+        'An e-commerce data analysis based on more than 500,000 transactions, including data cleaning, sales exploration and RFM customer segmentation.',
+      stack: ['Python', 'pandas', 'Matplotlib', 'Jupyter Notebook'],
+      link: 'https://github.com/merieme-laib/ecommerce-sales-analysis',
+    },
+    {
+      title: 'Japan Tourism Analytics Dashboard',
+      description:
+        'An interactive dashboard analyzing inbound tourism trends in Japan, with country comparisons, the impact of COVID-19 and simple forecasts.',
+      stack: ['Python', 'pandas', 'Streamlit', 'Plotly', 'statsmodels'],
+      link: 'https://github.com/merieme-laib/japan-tourism-dashboard',
+    },
+  ] satisfies Project[],
+  recherche:
+    'A data science / AI internship starting in February 2027, ideally in an international environment.',
+};
+
+export const portfolioContent = {
+  fr: frenchContent,
+  en: englishContent,
+};
+
+export const aboutContent = frenchContent;
+
 export const musicTracks = [
   {
     id: 'song1',
-    title: 'Lo-fi desk session',
+    title: { fr: 'Session lo-fi au bureau', en: 'Lo-fi desk session' },
     src: new URL('../assets/music/song1.mp3', import.meta.url).href,
   },
   {
     id: 'song2',
-    title: 'Night code melody',
+    title: { fr: 'Mélodie de code nocturne', en: 'Night code melody' },
     src: new URL('../assets/music/song2.mp3', import.meta.url).href,
   },
   {
     id: 'song3',
-    title: 'Soft pixels',
+    title: { fr: 'Pixels tout doux', en: 'Soft pixels' },
     src: new URL('../assets/music/song3.mp3', import.meta.url).href,
   },
 ];

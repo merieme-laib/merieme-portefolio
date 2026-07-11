@@ -25,7 +25,8 @@ body {
 
 button,
 a,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -66,7 +67,15 @@ a {
   line-height: 1.8;
 }
 
-.debug-toggle {
+.display-toggles {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.display-toggle {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
@@ -75,8 +84,30 @@ a {
   cursor: pointer;
 }
 
-.debug-toggle input {
+.display-toggle input {
   accent-color: #af7650;
+}
+
+.language-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: #f1d7b9;
+  font-size: 0.58rem;
+}
+
+.language-control select {
+  padding: 0.38rem 0.45rem;
+  border: 2px solid #6f523c;
+  border-radius: 0;
+  color: #f5e4cd;
+  background: #2d2119;
+  cursor: pointer;
+}
+
+.language-control select:focus-visible {
+  outline: 0.16rem dashed #fff4cb;
+  outline-offset: 0.12rem;
 }
 
 .room-frame {
@@ -112,6 +143,7 @@ a {
 .character {
   position: absolute;
   width: 17%;
+  aspect-ratio: 2 / 3;
   transform: translate(-50%, -95%);
   transition:
     left 130ms linear,
@@ -126,6 +158,16 @@ a {
   width: 100%;
   height: auto;
   user-select: none;
+}
+
+/* Le sujet occupe une zone plus petite dans le fichier nocturne. Ces valeurs
+   alignent sa zone visible sur celle du sprite de jour sans déplacer le joueur. */
+.character--night .character__sprite {
+  position: absolute;
+  width: 109.8%;
+  height: 104.2%;
+  left: -4.8%;
+  top: -2.88%;
 }
 
 .character--walking {

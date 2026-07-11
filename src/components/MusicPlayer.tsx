@@ -1,4 +1,5 @@
 import { musicTracks } from '../data/portfolioContent';
+import type { Language, Translation } from '../data/translations';
 
 type MusicPlayerProps = {
   trackIndex: number;
@@ -8,6 +9,8 @@ type MusicPlayerProps = {
   onSelectTrack: (index: number) => void;
   onTogglePlayback: () => void;
   onVolumeChange: (volume: number) => void;
+  translations: Translation;
+  language: Language;
 };
 
 export function MusicPlayer({
@@ -18,10 +21,12 @@ export function MusicPlayer({
   onSelectTrack,
   onTogglePlayback,
   onVolumeChange,
+  translations,
+  language,
 }: MusicPlayerProps) {
   return (
     <div className="music-player">
-      <div className="track-list" role="list" aria-label="Chansons">
+      <div className="track-list" role="list" aria-label={translations.songs}>
         {musicTracks.map((track, index) => (
           <button
             className={index === trackIndex ? 'track-button track-button--active' : 'track-button'}
@@ -29,17 +34,17 @@ export function MusicPlayer({
             key={track.id}
             onClick={() => onSelectTrack(index)}
           >
-            {track.title}
+            {track.title[language]}
           </button>
         ))}
       </div>
 
       <div className="music-controls">
         <button className="playback-button" type="button" onClick={onTogglePlayback}>
-          {isPlaying ? 'Pause' : 'Play'}
+          {isPlaying ? translations.pause : translations.play}
         </button>
         <label className="volume-control">
-          Volume
+          {translations.volume}
           <input
             type="range"
             min="0"
